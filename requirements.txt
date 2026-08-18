@@ -1,0 +1,7 @@
+Pillow
+pypdfium2
+pypdf
+reportlab
+tkcalendar
+babel
+pyinstaller
