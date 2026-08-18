@@ -1,0 +1,137 @@
+name: Build PADI Manager macOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-arm64:
+    name: Build Apple Silicon
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+
+      - name: Check Tkinter
+        run: |
+          python -c "import tkinter; print('Tk version:', tkinter.TkVersion)"
+
+      - name: Check imports
+        run: |
+          python -c "import PIL, pypdfium2, pypdf, reportlab, tkcalendar, babel; print('Imports OK')"
+
+      - name: Syntax check
+        run: |
+          python -m py_compile PADI_ManagerV20_mac_github.py
+
+      - name: Build application
+        run: |
+          python -m PyInstaller \
+            --noconfirm \
+            --clean \
+            --windowed \
+            --onedir \
+            --name "PADI Manager" \
+            --osx-bundle-identifier "ca.wilsondiving.padimanager" \
+            --collect-all pypdfium2 \
+            --collect-all tkcalendar \
+            --collect-all babel \
+            PADI_ManagerV20_mac_github.py
+
+      - name: Verify app
+        run: |
+          test -d "dist/PADI Manager.app"
+          codesign --verify --deep --strict --verbose=2 "dist/PADI Manager.app"
+
+      - name: Package app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "dist/PADI Manager.app" \
+            "PADI-Manager-Apple-Silicon.zip"
+
+      - name: Upload Apple Silicon artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PADI-Manager-Apple-Silicon
+          path: PADI-Manager-Apple-Silicon.zip
+
+
+  build-intel:
+    name: Build Intel Mac
+    runs-on: macos-15-intel
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+
+      - name: Check Tkinter
+        run: |
+          python -c "import tkinter; print('Tk version:', tkinter.TkVersion)"
+
+      - name: Check imports
+        run: |
+          python -c "import PIL, pypdfium2, pypdf, reportlab, tkcalendar, babel; print('Imports OK')"
+
+      - name: Syntax check
+        run: |
+          python -m py_compile PADI_ManagerV20_mac_github.py
+
+      - name: Build application
+        run: |
+          python -m PyInstaller \
+            --noconfirm \
+            --clean \
+            --windowed \
+            --onedir \
+            --name "PADI Manager" \
+            --osx-bundle-identifier "ca.wilsondiving.padimanager" \
+            --collect-all pypdfium2 \
+            --collect-all tkcalendar \
+            --collect-all babel \
+            PADI_ManagerV20_mac_github.py
+
+      - name: Verify app
+        run: |
+          test -d "dist/PADI Manager.app"
+          codesign --verify --deep --strict --verbose=2 "dist/PADI Manager.app"
+
+      - name: Package app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "dist/PADI Manager.app" \
+            "PADI-Manager-Intel.zip"
+
+      - name: Upload Intel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PADI-Manager-Intel
+          path: PADI-Manager-Intel.zip
